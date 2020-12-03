@@ -8,8 +8,8 @@ namespace CarparkWhere.Models
     public class Carpark
     {
         public string Number { get; set; }
-        public int TotalLots { get; set; }
-        public int AvailableLots { get; set; }
+        public string TotalLots { get; set; }
+        public string AvailableLots { get; set; }
         public string LotType { get; set; }
     }
 }

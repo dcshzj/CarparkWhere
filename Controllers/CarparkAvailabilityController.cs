@@ -2,6 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
+using System.Text.Json;
 using System.Threading.Tasks;
 using CarparkWhere.Models;
 
@@ -13,31 +15,76 @@ namespace CarparkWhere.Controllers
     [ApiController]
     public class CarparkAvailabilityController : ControllerBase
     {
+        public readonly string REQUEST_URL = "https://api.data.gov.sg/v1/transport/carpark-availability";
+
         // GET: api/<CarparkAvailabilityController>
         [HttpGet]
-        public IEnumerable<Carpark> Get()
+        public IActionResult Get()
         {
-            var rng = new Random();
-            return Enumerable.Range(1, 5).Select(x => new Carpark
+            var data = GetData().Result;
+            List<Carpark> carparks = new List<Carpark>();
+
+            using (JsonDocument document = JsonDocument.Parse(data))
             {
-                Number = x.ToString(),
-                TotalLots = 1,
-                AvailableLots = 0,
-                LotType = "C"
-            }).ToArray();
+                var items = document.RootElement.GetProperty("items").EnumerateArray().First<JsonElement>();
+                var carparksData = items.GetProperty("carpark_data").EnumerateArray();
+
+                foreach (JsonElement element in carparksData)
+                {
+                    var carparkInfo = element.GetProperty("carpark_info").EnumerateArray().First<JsonElement>();
+                    Carpark carpark = new Carpark
+                    {
+                        Number = element.GetProperty("carpark_number").GetString(),
+                        TotalLots = carparkInfo.GetProperty("total_lots").GetString(),
+                        AvailableLots = carparkInfo.GetProperty("lots_available").GetString(),
+                        LotType = carparkInfo.GetProperty("lot_type").GetString()
+                    };
+                    carparks.Add(carpark);
+                }
+            }
+
+            return Ok(carparks);
         }
 
         // GET api/<CarparkAvailabilityController>/5
         [HttpGet("{id}")]
-        public Carpark Get(string id)
+        public IActionResult Get(string id)
         {
-            return new Carpark
+            var data = GetData().Result;
+            List<Carpark> carparks = new List<Carpark>();
+
+            using (JsonDocument document = JsonDocument.Parse(data))
             {
-                Number = id,
-                TotalLots = 1,
-                AvailableLots = 0,
-                LotType = "C"
-            };
+                var items = document.RootElement.GetProperty("items").EnumerateArray().First<JsonElement>();
+                var carparksData = items.GetProperty("carpark_data").EnumerateArray();
+
+                foreach (JsonElement element in carparksData)
+                {
+                    if (element.GetProperty("carpark_number").GetString().Equals(id))
+                    {
+                        var carparkInfo = element.GetProperty("carpark_info").EnumerateArray().First<JsonElement>();
+                        Carpark carpark = new Carpark
+                        {
+                            Number = element.GetProperty("carpark_number").GetString(),
+                            TotalLots = carparkInfo.GetProperty("total_lots").GetString(),
+                            AvailableLots = carparkInfo.GetProperty("lots_available").GetString(),
+                            LotType = carparkInfo.GetProperty("lot_type").GetString()
+                        };
+                        return Ok(carpark);
+                    }
+                }
+            }
+
+            return BadRequest(new { message = "The carpark with the given ID cannot be found." });
+        }
+
+        private async Task<string> GetData()
+        {
+            HttpClient client = new HttpClient();
+            HttpResponseMessage response = await client.GetAsync(REQUEST_URL);
+            HttpContent content = response.Content;
+            string data = await content.ReadAsStringAsync();
+            return data;
         }
     }
 }
