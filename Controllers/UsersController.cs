@@ -20,7 +20,7 @@ using CarparkWhere.Models.Users;
 namespace CarparkWhere.Controllers
 {
     [Authorize]
-    [Route("[controller]")]
+    [Route("api/users")]
     [ApiController]
     public class UsersController : ControllerBase
     {
@@ -46,7 +46,7 @@ namespace CarparkWhere.Controllers
 
             if (user == null)
             {
-                return BadRequest(new { message = "Email or password is incorrect" });
+                return Unauthorized(new { message = "Email or password is incorrect" });
             }
 
             var tokenHandler = new JwtSecurityTokenHandler();
@@ -70,6 +70,7 @@ namespace CarparkWhere.Controllers
                 Email = user.Email,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
+                ContactNumber = user.ContactNumber,
                 Token = tokenString
             });
         }
