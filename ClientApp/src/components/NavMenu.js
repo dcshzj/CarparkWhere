@@ -24,7 +24,7 @@ export class NavMenu extends Component {
 
     logout() {
         authService.logout();
-        // window.location.assign('/login');
+        window.location.assign('/login');
     }
 
     render() {

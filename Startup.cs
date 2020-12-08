@@ -118,7 +118,11 @@ namespace CarparkWhere
             app.UseSpa(spa =>
             {
                 spa.Options.SourcePath = "ClientApp";
-                spa.UseProxyToSpaDevelopmentServer("http://localhost:3000");
+
+                if (env.IsDevelopment())
+                {
+                    spa.UseProxyToSpaDevelopmentServer("http://localhost:3000");
+                }
             });
         }
     }
